@@ -2,11 +2,30 @@ MySQL.ready(function ()
     TriggerEvent('deleteAllYP')
 end)
 
-ESX = nil
-
-TriggerEvent('pyrp_base:getSharedObject', function(obj) ESX = obj end)
+local ESX = exports['es_extended']:getSharedObject()
 
 local callID = nil
+
+local function sendServerNotification(target, notifType, description)
+    if not target then return end
+
+    local notifDescription = description
+    local notifTypeValue = notifType
+
+    if type(notifType) == 'table' then
+        notifDescription = notifType.text or notifType.description or notifDescription
+        notifTypeValue = notifType.type or notifTypeValue
+        if notifType.title and not description then
+            notifDescription = notifType.title
+        end
+    end
+
+    TriggerClientEvent('ox_lib:notify', target, {
+        title = 'Phone',
+        type = notifTypeValue or 'inform',
+        description = notifDescription
+    })
+end
 
 --[[ Twitter Stuff ]]
 RegisterNetEvent('GetTweets')
@@ -90,20 +109,10 @@ AddEventHandler('getContacts', function(cursource)
 	
     local xPlayer = ESX.GetPlayerFromId(src)
 	if xPlayer then
-		MySQL.Async.fetchAll('SELECT * FROM phone_contacts WHERE identifier = @identifier', { ['@identifier'] = xPlayer.identifier }, function(contacts)
-			TriggerClientEvent('phone:loadContacts', src, contacts)
-		end)
-		
-		MySQL.Async.fetchAll('SELECT * FROM pyrp_gangs_members WHERE identifier = @identifier', { ['@identifier'] = xPlayer.identifier }, function(result)
-			if result[1] ~= nil then
-				local data = { gang = result[1].gangName, gang_pos = result[1].gangPosition }
-				TriggerClientEvent('pyrp_gangs:SetGang', xPlayer.source, data)
-			else
-				local data = { gang = nil, gang_pos = nil }
-				TriggerClientEvent('pyrp_gangs:SetGang', xPlayer.source, data)
-			end
-		end)
-	end
+                MySQL.Async.fetchAll('SELECT * FROM phone_contacts WHERE identifier = @identifier', { ['@identifier'] = xPlayer.identifier }, function(contacts)
+                        TriggerClientEvent('phone:loadContacts', src, contacts)
+                end)
+        end
 end)
 
 RegisterNetEvent('deleteContact')
@@ -165,7 +174,7 @@ AddEventHandler('phone:callContact', function(targetnumber, toggle)
 	if found then
 		TriggerClientEvent('phone:receiveCall', xTarget.source, targetnumber, src, srcPhone)
 	else
-		TriggerClientEvent('mythic_notify:client:SendAlert', xPlayer.source, { type = 'error', text = 'Phone number is not available.', length = 7000})
+		sendServerNotification(xPlayer.source, { type = 'error', text = 'Phone number is not available.', length = 7000})
 	end
 end)
 
@@ -328,12 +337,7 @@ RegisterCommand("ph", function(source, args, rawCommand)
 
     TriggerClientEvent('sendMessagePhoneN', src, srcPhone)
 end, false)
-
-RegisterCommand("pyrptest", function(source, args, rawCommand)
-    local src = source
-    local xPlayer = ESX.GetPlayerFromId(src)
-	
-end, false)]]
+]]
 
 RegisterNetEvent('phone:sendMailToNonWhitelist')
 AddEventHandler('phone:sendMailToNonWhitelist', function(subject, message)
@@ -413,8 +417,8 @@ AddEventHandler('phone:UseSimCard', function()
             ['@myPhoneNumber'] = myPhoneNumber,
             ['@identifier'] = xPlayer.identifier
         }, function ()
-			TriggerClientEvent("inventory:removeItem", xPlayer.source, 'simcard', 1)
-			TriggerClientEvent('mythic_notify:client:SendAlert', xPlayer.source, { type = 'inform', text = 'You\'ve changed your phone number to '..myPhoneNumber..'', length = 7000})
+                exports.ox_inventory:RemoveItem(xPlayer.source, 'simcard', 1)
+			sendServerNotification(xPlayer.source, { type = 'inform', text = 'You\'ve changed your phone number to '..myPhoneNumber..'', length = 7000})
         end)
 	end
 end)
@@ -548,13 +552,13 @@ end)
 
 RegisterServerEvent('tp:checkPhoneCount')
 AddEventHandler('tp:checkPhoneCount', function()
-	local _source = source
-	local xPlayer = ESX.GetPlayerFromId(_source)
-	if xPlayer.getInventoryItem('phone').count >= 1 then
-		TriggerClientEvent('tp:heHasPhone', _source)
-	else 
-		TriggerClientEvent('mythic_notify:client:SendAlert', source, { type = 'error', text = 'You dont have a phone, Buy one at your local store', length = 7000})
-	end
+        local _source = source
+        local phoneCount = exports.ox_inventory:Search(_source, 'count', 'phone')
+        if phoneCount > 0 then
+                TriggerClientEvent('tp:heHasPhone', _source)
+        else
+                sendServerNotification(_source, { type = 'error', text = 'You dont have a phone, Buy one at your local store' })
+        end
 end)
 
 RegisterCommand("payphone", function(source, args, raw)
@@ -565,7 +569,7 @@ RegisterCommand("payphone", function(source, args, raw)
         TriggerClientEvent('phone:makepayphonecall', src, pnumber)
         xPlayer.removeMoney(25)
     else
-        TriggerClientEvent('mythic_notify:client:SendAlert', source, { type = 'error', text = 'You dont have $25 for the payphone', length = 7000})
+        sendServerNotification(source, { type = 'error', text = 'You dont have $25 for the payphone', length = 7000})
     end
 end, false)
 
@@ -593,7 +597,7 @@ AddEventHandler('phone:pingContact', function(name , number , coords)
             if xPlayer.identifier == targetIdentifier then
                 local receiverID = xPlayer.source
                 TriggerClientEvent('phone:sendPing' , receiverID , coords , name , mynumber)
-                TriggerClientEvent('mythic_notify:client:SendAlert', receiverID, { type = 'inform', text = 'You have recive a ping from ' ..mynumber })
+                sendServerNotification(receiverID, { type = 'inform', text = 'You have recive a ping from ' ..mynumber })
             end
         end
     end
@@ -610,15 +614,15 @@ AddEventHandler('phone:PromoteEmployee', function(identifier, name, job, grade)
 		if xTarget then
 			local currentJobGrade = xTarget.job.grade
 			xTarget.setJob(job, currentJobGrade + 1)
-			TriggerClientEvent('mythic_notify:client:SendAlert', xTarget.source, { type = 'success', text = 'You\'ve been promoted from '..grade..'.', length = 7000})
-			TriggerClientEvent('mythic_notify:client:SendAlert', xPlayer.source, { type = 'success', text = 'You\'ve promoted '..name..' from '..grade..'', length = 7000})
+			sendServerNotification(xTarget.source, { type = 'success', text = 'You\'ve been promoted from '..grade..'.', length = 7000})
+			sendServerNotification(xPlayer.source, { type = 'success', text = 'You\'ve promoted '..name..' from '..grade..'', length = 7000})
 		else
 			MySQL.Async.execute('UPDATE users SET job = @job, job_grade = job_grade + @job_grade WHERE identifier = @identifier', {
 				['@job']        = job,
 				['@job_grade']  = 1,
 				['@identifier'] = identifier
 			}, function(rowsChanged)
-				TriggerClientEvent('mythic_notify:client:SendAlert', xPlayer.source, { type = 'success', text = 'You\'ve promoted '..name..'', length = 7000})
+				sendServerNotification(xPlayer.source, { type = 'success', text = 'You\'ve promoted '..name..'', length = 7000})
 			end)
 		end
 	end
@@ -633,15 +637,15 @@ AddEventHandler('phone:FireEmployee', function(identifier, name, job, grade)
 		local xTarget = ESX.GetPlayerFromIdentifier(identifier)
 		if xTarget then
 			xTarget.setJob('unemployed', 0)
-			TriggerClientEvent('mythic_notify:client:SendAlert', xTarget.source, { type = 'success', text = 'You\'ve been fired', length = 7000})
-			TriggerClientEvent('mythic_notify:client:SendAlert', xPlayer.source, { type = 'success', text = 'You fired '..name..'', length = 7000})
+			sendServerNotification(xTarget.source, { type = 'success', text = 'You\'ve been fired', length = 7000})
+			sendServerNotification(xPlayer.source, { type = 'success', text = 'You fired '..name..'', length = 7000})
 		else
 			MySQL.Async.execute('UPDATE users SET job = @job, job_grade = job_grade + @job_grade WHERE identifier = @identifier', {
 				['@job']        = 'unemployed',
 				['@job_grade']  = 0,
 				['@identifier'] = identifier
 			}, function(rowsChanged)
-				TriggerClientEvent('mythic_notify:client:SendAlert', xPlayer.source, { type = 'success', text = 'You fired '..name..'.', length = 7000})
+				sendServerNotification(xPlayer.source, { type = 'success', text = 'You fired '..name..'.', length = 7000})
 			end)
 		end
 	end
@@ -656,9 +660,9 @@ AddEventHandler('phone:RecruitEmployee', function(target, newJob)
 		local xTarget = ESX.GetPlayerFromId(target)
 		if xTarget ~= nil then
 			xTarget.setJob(newJob, 0)
-			TriggerClientEvent('mythic_notify:client:SendAlert', xTarget.source, { type = 'success', text = 'You\'ve been hired.', length = 7000})
+			sendServerNotification(xTarget.source, { type = 'success', text = 'You\'ve been hired.', length = 7000})
 		else
-			TriggerClientEvent('mythic_notify:client:SendAlert', xPlayer.source, { type = 'error', text = 'Target not found.', length = 7000})
+			sendServerNotification(xPlayer.source, { type = 'error', text = 'Target not found.', length = 7000})
 		end
 	end
 end)
@@ -681,7 +685,7 @@ end)
 RegisterNetEvent('phone:PairDevice')
 AddEventHandler('phone:PairDevice', function(deviceId, ytLink, volume)
 	local xPlayer = ESX.GetPlayerFromId(source)
-	TriggerClientEvent('mythic_notify:client:SendAlert', xPlayer.source, { type = 'inform', text = 'You have successfully paired your phone to Bluetooth ID: '..deviceId..'', length = 7000})
+	sendServerNotification(xPlayer.source, { type = 'inform', text = 'You have successfully paired your phone to Bluetooth ID: '..deviceId..'', length = 7000})
 	ServerBoombacks[deviceId] = {
 		ytlink = ytLink,
 		playing = false,
@@ -708,38 +712,27 @@ AddEventHandler('phone:PickupBoombox', function(deviceId, giveItem)
 	local xPlayer = ESX.GetPlayerFromId(source)
 	
 	if ServerBoombacks[deviceId] == nil then
-		TriggerClientEvent('mythic_notify:client:SendAlert', xPlayer.source, { type = 'inform', text = 'Nice try homie!', length = 7000})
+		sendServerNotification(xPlayer.source, { type = 'inform', text = 'Nice try homie!', length = 7000})
 		return
 	end
 	
 	ServerBoombacks[deviceId] = nil
 	TriggerClientEvent('phone:DeleteBoombox', -1, deviceId)
 	
-	if giveItem then
-		TriggerClientEvent('player:receiveItem', xPlayer.source, 'boombox', 1, false)
-	end
+        if giveItem then
+                exports.ox_inventory:AddItem(xPlayer.source, 'boombox', 1)
+        end
 end)
 
 -------------- GANG
 
-ESX.RegisterServerCallback('phone:getGangInfo', function(source, cb, gangName)
-	local pyrp = source
-	local xPlayer = ESX.GetPlayerFromId(pyrp)
-	MySQL.Async.fetchAll('SELECT * FROM pyrp_gangs WHERE gangName = @gangName', { ['@gangName'] = gangName }, function(result)
-		if result[1] ~= nil then
-			cb(result[1].gangFunds, result[1].gangResources, result[1].gangWeapons)
-		end
-	end)
+ESX.RegisterServerCallback('phone:getGangInfo', function(source, cb)
+        cb(0, 0, 0)
 end)
 
 RegisterNetEvent('phone:RejectClientOffer')
 AddEventHandler('phone:RejectClientOffer', function()
-	local pyrp = source
-	local xPlayer = ESX.GetPlayerFromId(pyrp)
-	
-	TriggerClientEvent('pyrp_crafting:rejectClientOffer', xPlayer.source)
-	
-	
+        sendServerNotification(source, { type = 'error', text = 'Crafting offers are not available.' })
 end)
 
 

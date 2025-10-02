@@ -21,30 +21,65 @@ local isDead = false
 local isNotInCall, isDialing, isReceivingCall, isCallInProgress = 0, 1, 2, 3
 local callStatus = isNotInCall
 
-ESX = nil
+local ESX = exports['es_extended']:getSharedObject()
 
-Citizen.CreateThread(function()
-  	while ESX == nil do
-    	TriggerEvent('pyrp_base:getSharedObject', function(obj) ESX = obj end)
-    	Citizen.Wait(250)
-  	end
+local function HasItem(item)
+  return exports.ox_inventory:Search('count', item) > 0
+end
 
-  	while ESX.GetPlayerData().job == nil do
-		Citizen.Wait(250)
-	end
-	
-  ESX.PlayerData = ESX.GetPlayerData()
-  
-  TriggerServerEvent('Server:GetHandle')
-  TriggerServerEvent('getYP')
-  Citizen.Wait(200)
-  --TriggerEvent("YPUpdatePhone")
+local function PhoneNotify(notificationType, message, duration, extra)
+  local data = {
+    title = 'Phone',
+    description = message,
+    type = notificationType or 'inform'
+  }
+
+  if type(duration) == 'number' then
+    if duration > 0 and duration < 1000 then
+      data.duration = duration * 1000
+    else
+      data.duration = duration
+    end
+  end
+
+  if type(extra) == 'table' then
+    for key, value in pairs(extra) do
+      if data[key] == nil then
+        data[key] = value
+      end
+    end
+  end
+
+  lib.notify(data)
+end
+
+local function ensurePlayerData()
+  if not ESX.PlayerData or not ESX.PlayerData.job then
+    ESX.PlayerData = ESX.GetPlayerData()
+  end
+end
+
+CreateThread(function()
+  while true do
+    ensurePlayerData()
+    if ESX.PlayerData and ESX.PlayerData.job then
+      TriggerServerEvent('Server:GetHandle')
+      TriggerServerEvent('getYP')
+      break
+    end
+    Wait(250)
+  end
 end)
 
-RegisterNetEvent('esx:setJob')
-AddEventHandler('esx:setJob', function(job)
-	ESX.PlayerData.job = job
-	Citizen.Wait(5000)
+RegisterNetEvent('esx:playerLoaded', function(xPlayer)
+  ESX.PlayerData = xPlayer
+  TriggerServerEvent('Server:GetHandle')
+  TriggerServerEvent('getYP')
+end)
+
+RegisterNetEvent('esx:setJob', function(job)
+  ensurePlayerData()
+  ESX.PlayerData.job = job
 end)
 
 local gang_data = {}
@@ -57,9 +92,9 @@ end)
 RegisterNUICallback('btnNotifyToggle', function(data, cb)
     allowpopups = not allowpopups
     if allowpopups then
-		exports['mythic_notify']:DoLongHudText('success', 'Popups Enabled')
+		PhoneNotify('success', 'Popups Enabled')
     else
-		exports['mythic_notify']:DoLongHudText('error', 'Popups Disabled')
+		PhoneNotify('error', 'Popups Disabled')
     end
 end)
 
@@ -87,7 +122,7 @@ RegisterNetEvent('Yougotpaid')
 AddEventHandler('Yougotpaid', function(cidsent)
     --local cid = exports["isPed"]:isPed("cid")
     if tonumber(cid) == tonumber(cidsent) then
-        TriggerEvent("DoLongHudText","Life Invader Payslip Generated.")
+        PhoneNotify('inform', 'Life Invader Payslip Generated.')
     end
 end)
            
@@ -266,7 +301,7 @@ end)
 
 RegisterNUICallback('trackTaskLocation', function(data, cb)
     local taskID = findTaskIdFromBlockChain(data.TaskIdentifier)
-    TriggerEvent("DoLongHudText","Location Set",15)
+    PhoneNotify('inform', 'Location Set', 15000)
 
     SetNewWaypoint(activeTasks[taskID]["Location"]["x"],activeTasks[taskID]["Location"]["y"])
 end)
@@ -336,7 +371,7 @@ RegisterNUICallback('911distress', function(data)
 	closeGui()
 	TriggerEvent('esx_outlawalert:911Alerts', data.job, '10-78', 'Need Assistance')
 
-	exports['mythic_notify']:DoCustomHudText ('inform', 'You have sent a distress.', 5000)  
+	PhoneNotify('inform', 'You have sent a distress.', 5000)  
 	PlaySound(-1, "Event_Start_Text", "GTAO_FM_Events_Soundset", 0, 0, 1)
 end)
 
@@ -511,7 +546,7 @@ RegisterNUICallback('kickGangMember', function(data)
   closeGui()
 
   if gang_data.gang_pos ~= "Boss" then
-    exports['mythic_notify']:DoCustomHudText ('error', 'You are not authorized to kick gang members.', 5000)  
+    PhoneNotify('error', 'You are not authorized to kick gang members.', 5000)  
     return
   end
 
@@ -522,7 +557,7 @@ RegisterNUICallback('promoteGangMember', function(data)
   closeGui()
 
   if gang_data.gang_pos ~= "Boss" then
-    exports['mythic_notify']:DoCustomHudText ('error', 'You are not authorized to promote gang members.', 5000)  
+    PhoneNotify('error', 'You are not authorized to promote gang members.', 5000)  
     return
   end
 
@@ -532,7 +567,7 @@ end)
 RegisterNUICallback('recruitGangMember', function(data)
 
   if gang_data.gang_pos ~= "Boss" and gang_data.gang_pos ~= "Leader"  then
-    exports['mythic_notify']:DoCustomHudText ('error', 'You are not authorized to recruit new gang members.', 5000)  
+    PhoneNotify('error', 'You are not authorized to recruit new gang members.', 5000)  
     return
   end
 
@@ -541,7 +576,7 @@ end)
 
 RegisterNUICallback('gangRestock', function(data)
   if gang_data.gang_pos ~= "Boss" then
-    exports['mythic_notify']:DoCustomHudText ('error', 'You are not authorized to buy gang weapon stock and resources.', 5000)  
+    PhoneNotify('error', 'You are not authorized to buy gang weapon stock and resources.', 5000)  
     return
   end
 
@@ -667,9 +702,9 @@ end)
 
 RegisterNUICallback('btnMute', function()
   if phoneNotifications then
-    exports['mythic_notify']:DoLongHudText('error', 'Notifications Disabled.')
+    PhoneNotify('error', 'Notifications Disabled.')
   else
-    exports['mythic_notify']:DoLongHudText('success', 'Notifications Enabled.')
+    PhoneNotify('success', 'Notifications Enabled.')
   end
   phoneNotifications = not phoneNotifications
 end)
@@ -736,12 +771,12 @@ function findVehFromPlateAndLocate(plate)
     local vehCoords = GetEntityCoords(vehicle)
 
     if phoneNotifications then
-      exports['mythic_notify']:DoLongHudText('inform', 'Your vehicle has been marked on your GPS.')
+      PhoneNotify('inform', 'Your vehicle has been marked on your GPS.')
       PlaySound(-1, "Event_Start_Text", "GTAO_FM_Events_Soundset", 0, 0, 1)
     end
     SetNewWaypoint(vehCoords.x, vehCoords.y)
   else
-    exports['mythic_notify']:DoLongHudText('inform', 'Your vehicle is in impound.')
+    PhoneNotify('inform', 'Your vehicle is in impound.')
   end
   
 end
@@ -943,7 +978,7 @@ local pingIds
 RegisterNUICallback('pingContact', function(data, cb)
   local pedCoords = GetEntityCoords(PlayerPedId())
   closeGui()
-  exports['mythic_notify']:DoLongHudText('inform', 'You have sent a ping to ' .. data.name)
+  PhoneNotify('inform', 'You have sent a ping to ' .. data.name)
   TriggerServerEvent('phone:pingContact', data.name, data.number, pedCoords)
   cb('ok')
 end)
@@ -1000,7 +1035,7 @@ RegisterNUICallback('acceptPing', function(data, cb)
   local x = myPings[data.pingId].coords[1]
   local y = myPings[data.pingId].coords[2]
 
-  exports['mythic_notify']:DoLongHudText('inform', 'You have accepted the ping from ' .. sender)
+  PhoneNotify('inform', 'You have accepted the ping from ' .. sender)
   ClearGpsPlayerWaypoint()
   SetNewWaypoint(x, y)
   cb('ok')
@@ -1101,9 +1136,9 @@ RegisterNUICallback('selectedJob', function(data, cb)
       TriggerServerEvent('esx_cargodelivery:AcceptTruckerJob', data.jobId)
     else
       print('Doing delivery already')
-      exports['mythic_notify']:DoLongHudText('inform', 'You already have a pending package to deliver.')
+      PhoneNotify('inform', 'You already have a pending package to deliver.')
       Citizen.Wait(1000)
-      exports['mythic_notify']:DoLongHudText('inform', 'Rent a truck, to pickup and deliver it.')
+      PhoneNotify('inform', 'Rent a truck, to pickup and deliver it.')
     end
 end)
 
@@ -1388,7 +1423,7 @@ AddEventHandler('websites:updateClient', function(passedList)
 end)
 
 function hasPhone()
-	return exports['pyrp_inventory']:hasEnoughOfItem('phone', 1)
+        return HasItem('phone')
 end
 --[[
 function hasRadio()
@@ -1541,7 +1576,7 @@ AddEventHandler('canPing', function(target)
     local crds = GetEntityCoords(PlayerPedId())
     TriggerServerEvent("requestPing", target, crds["x"],crds["y"],crds["z"] )
   else
-    TriggerEvent("DoLongHudText","You need a phone to use GPS!",2)
+    PhoneNotify('error', 'You need a phone to use GPS!', 2000)
   end
 end)
 
@@ -1551,7 +1586,7 @@ local currentping = { ["x"] = 0.0,["y"] = 0.0,["z"] = 0.0, ["src"] = 0 }
 RegisterNetEvent('allowedPing')
 AddEventHandler('allowedPing', function(x,y,z,src,name)
   if pingcount > 0 then
-    TriggerEvent("DoLongHudText","Somebody sent you a GPS flag but you already have one in process!",2)
+    PhoneNotify('error', 'Somebody sent you a GPS flag but you already have one in process!', 2000)
     return
   end
   
@@ -1559,12 +1594,12 @@ AddEventHandler('allowedPing', function(x,y,z,src,name)
     pingcount = 5
     currentping = { ["x"] = x,["y"] = y,["z"] = z, ["src"] = src }
     while pingcount > 0 do
-      TriggerEvent("DoLongHudText",name .. " has given you a ping location, type /pingaccept to accept",2)
+      PhoneNotify('inform', name .. ' has given you a ping location, type /pingaccept to accept', 2000)
       Citizen.Wait(5000)
       pingcount = pingcount - 1
     end
   else
-    TriggerEvent("DoLongHudText","Somebody sent you a GPS flag but you have no phone!",2)
+    PhoneNotify('error', 'Somebody sent you a GPS flag but you have no phone!', 2000)
   end
   pingcount = 0
   currentping = { ["x"] = 0.0,["y"] = 0.0,["z"] = 0.0, ["src"] = 0 }
@@ -1584,7 +1619,7 @@ AddEventHandler('acceptPing', function()
     SetBlipScale(currentblip, 1.2)
     AddTextComponentString("Accepted GPS Marker")
     EndTextCommandSetBlipName(currentblip)
-    TriggerEvent("DoLongHudText","Their GPS ping has been marked on the map")
+    PhoneNotify('inform', 'Their GPS ping has been marked on the map')
     TriggerServerEvent("pingAccepted",currentping["src"])
     pingcount = 0
     Citizen.Wait(60000)
@@ -1609,10 +1644,10 @@ Citizen.CreateThread(function()
   while true do
     Citizen.Wait(0)
     if IsControlJustPressed(1, 288) then
-		if exports["pyrp_inventory"]:hasEnoughOfItem('phone', 1, false) then
+		if HasItem('phone') then
 			GotPhone()
 		else
-			exports['mythic_notify']:DoLongHudText('error', 'You don\'t have mobile phone.')
+			PhoneNotify('error', 'You don\'t have mobile phone.')
 		end
       --TriggerServerEvent("tp:checkPhoneCount")
     end
@@ -1691,7 +1726,7 @@ RegisterNUICallback('newPostSubmit', function(data, cb)
     TriggerServerEvent('phone:updatePhoneJob', data.advert)
   else
     TriggerServerEvent('phone:updatePhoneJob', ESX.PlayerData.job.name .. " | " .. data.advert)
-    TriggerEvent("DoLongHudText","You are already listed as a " .. myjob)
+    PhoneNotify('error', 'You are already listed as a ' .. myjob)
   end
 end)
 
@@ -1703,7 +1738,7 @@ RegisterNetEvent("yellowPages:retrieveLawyersOnline")
 AddEventHandler("yellowPages:retrieveLawyersOnline", function(command)
     local isFound = false
     local jsonparse = json.decode(YellowPages)
-    exports['mythic_notify']:DoLongHudText('inform', 'Searching for a Lawyer...', 2500, { ['background-color'] = '#0062ff' })
+    PhoneNotify('inform', 'Searching for a Lawyer...', 2500, { ['background-color'] = '#0062ff' })
     Citizen.Wait(2000)
     for i = 1, #YellowPageArray do
       local job = jsonparse[tonumber(i)].advert
@@ -1876,7 +1911,7 @@ Citizen.CreateThread(function()
 end)
 
 function ShowText(text)
-  TriggerEvent("DoLongHudText",text)
+  PhoneNotify('inform', text)
 end
 
 -- Opens our phone
@@ -1940,7 +1975,7 @@ RegisterNUICallback('newMessageSubmit', function(data, cb)
     TriggerEvent('phone:sendSMS', tonumber(data.number), data.message)
     cb('ok')
   else
-    TriggerEvent("DoLongHudText","You can not do this while injured.",2)
+    PhoneNotify('error', 'You can not do this while injured.', 2000)
   end
 end)
 
@@ -2049,7 +2084,7 @@ AddEventHandler('animation:phonecallstart', function()
     if AnonCall then
        local dPB = #(PhoneBooth - GetEntityCoords( PlayerPedId()))
        if dPB > 2.0 then
-        exports['mythic_notify']:DoLongHudText('error', 'Moved too far.')
+        PhoneNotify('error', 'Moved too far.')
 
         endCall()
        end
@@ -2064,7 +2099,7 @@ AddEventHandler('animation:phonecallstart', function()
     if onhold then
       if count == 800 then
          count = 0
-         exports['mythic_notify']:DoLongHudText('inform', 'Call On Hold.', 5000)
+         PhoneNotify('inform', 'Call On Hold.', 5000)
       end
     end
 
@@ -2095,7 +2130,7 @@ AddEventHandler('phone:makecall', function(pnumber)
     recentcalls[#recentcalls + 1] = { ["type"] = 2, ["number"] = pnumber, ["name"] = dialingName }
     TriggerServerEvent('phone:callContact', pnumber, true)
   else
-    exports['mythic_notify']:DoLongHudText('inform', 'It appears you are already in a call, injured or with out a phone, please type /h to reset your calls.', 10000)
+    PhoneNotify('inform', 'It appears you are already in a call, injured or with out a phone, please type /h to reset your calls.', 10000)
 
     --TriggerEvent("DoLongHudText","It appears you are already in a call, injured or with out a phone, please type /hangup to reset your calls.",2)
   end
@@ -2129,7 +2164,7 @@ AddEventHandler('phone:makepayphonecall', function(pnumber)
 
     if not checkForPayPhone() then
       --TriggerEvent("DoLongHudText","You are not near a payphone.",2)
-      exports['mythic_notify']:DoLongHudText('error', 'You are not to any payphone.')
+      PhoneNotify('error', 'You are not to any payphone.')
       return
     end
 
@@ -2144,7 +2179,7 @@ AddEventHandler('phone:makepayphonecall', function(pnumber)
       TriggerServerEvent('phone:callContact', pnumber, false, isDialing)
     else
       --TriggerEvent("DoLongHudText","It appears you are already in a call, injured or with out a phone, please type /hangup to reset your calls.",2)
-      exports['mythic_notify']:DoLongHudText('error', 'Call Error.')
+      PhoneNotify('error', 'Call Error.')
     end
 
 end)
@@ -2163,7 +2198,7 @@ RegisterNUICallback('callContact', function(data, cb)
     TriggerEvent("animation:phonecallstart")
     TriggerServerEvent('phone:callContact', data.number, true)
   else
-    TriggerEvent("DoLongHudText","It appears you are already in a call, injured or with out a phone, please type /hangup to reset your calls.",2)
+    PhoneNotify('error', 'It appears you are already in a call, injured or without a phone. Please type /hangup to reset your calls.', 2000)
   end
   cb('ok')
 end)
@@ -2176,7 +2211,7 @@ RegisterNUICallback('callContact', function(data, cb)
     TriggerServerEvent('phone:callContact', data.number, true)
   else
     --TriggerEvent("DoLongHudText","It appears you are already in a call, injured or with out a phone, please type /hangup to reset your calls.",2)
-    exports['mythic_notify']:DoLongHudText('error', 'Call Error.')
+    PhoneNotify('error', 'Call Error.')
   end
   cb('ok')
 end)
@@ -2250,11 +2285,11 @@ AddEventHandler('phone:answercall', function()
     answerCall()
     TriggerEvent("animation:phonecallstart")
     --exports['mythic_notify']:SendAlert('inform', 'You have answered a call.')
-    exports['mythic_notify']:DoLongHudText('inform', 'You have answered a call.')
+    PhoneNotify('inform', 'You have answered a call.')
     callTimer = 0
   else
     --exports['mythic_notify']:SendAlert('error', 'You are not being called, injured, or you took too long.')
-    exports['mythic_notify']:DoLongHudText('error', 'Call Error.')
+    PhoneNotify('error', 'Call Error.')
     --TriggerEvent("DoLongHudText","You are not being called, injured, or you took too long.",2)
   end
 end)
@@ -2262,7 +2297,7 @@ end)
 RegisterNetEvent('phone:initiateCall')
 AddEventHandler('phone:initiateCall', function(srcID)
     --exports['mythic_notify']:SendAlert('inform', 'You have started a call.', 5000)
-    exports['mythic_notify']:DoLongHudText('inform', 'You have started a call.')
+    PhoneNotify('inform', 'You have started a call.')
     --TriggerEvent("DoLongHudText","You have started a call.",1)
     initiatingCall()
     if not AnonCall then
@@ -2311,13 +2346,13 @@ AddEventHandler('phone:callactive', function()
       if onhold then
         phoneString = phoneString .. "They are on Hold | "
         if not held1 then
-          TriggerEvent("DoLongHudText","You have put the caller on hold.",888)
+          PhoneNotify('inform', 'You have put the caller on hold.', 888)
           held1 = true
         end
       else
         phoneString = phoneString .. "Call Active | "
         if held1 then
-          TriggerEvent("DoLongHudText","Your call is no longer on hold.",888)
+          PhoneNotify('inform', 'Your call is no longer on hold.', 888)
           held1 = false
         end
       end
@@ -2325,13 +2360,13 @@ AddEventHandler('phone:callactive', function()
       if mySourceHoldStatus then
         phoneString = phoneString .. "You are on hold"
         if not held2 then
-          TriggerEvent("DoLongHudText","You are on hold.",2)
+          PhoneNotify('inform', 'You are on hold.', 2000)
           held2 = true
         end
       else
         phoneString = phoneString .. "Caller Active"
         if held2 then
-          TriggerEvent("DoLongHudText","You are no longer on hold.",2)
+          PhoneNotify('inform', 'You are no longer on hold.', 2000)
           held2 = false
         end
       end
@@ -2373,7 +2408,7 @@ AddEventHandler('phone:receiveCall', function(phoneNumber, srcID, calledNumber)
 
     receivingCall(callFrom) -- Send contact name if exists, if not send number
   else
-    exports['mythic_notify']:DoLongHudText('inform', "You are receiving a call from " .. callFrom .. " but are currently already in one, sending busy response.")
+    PhoneNotify('inform', "You are receiving a call from " .. callFrom .. " but are currently already in one, sending busy response.")
   end
 end)
 
@@ -2383,7 +2418,7 @@ function initiatingCall()
   callTimer = 8
 
   --exports['mythic_notify']:SendAlert('inform', 'You are making a call, please hold.', 7500)
-  exports['mythic_notify']:DoLongHudText('inform', 'You are making a call, please hold.')
+  PhoneNotify('inform', 'You are making a call, please hold.')
 
   --TriggerEvent("DoLongHudText","You are making a call, please hold.",1)
   while (callTimer > 0 and callStatus == isDialing) do
@@ -2407,7 +2442,7 @@ function receivingCall(callFrom)
   while (callTimer > 0 and callStatus == isReceivingCall) do
     if hasPhone() then
       --exports['mythic_notify']:SendAlert('inform', 'Call from: ' .. callFrom .. " /ans or /h", 5000)
-      exports['mythic_notify']:DoCustomHudText('inform', 'Call from: ' .. callFrom .. " /ans or /h", 2250)
+      PhoneNotify('inform', 'Call from: ' .. callFrom .. " /ans or /h", 2250)
       if phoneNotifications then
         TriggerServerEvent('InteractSound_SV:PlayWithinDistance', 2.0, 'cellcall', 0.5)
       end
@@ -2486,11 +2521,11 @@ AddEventHandler('phone:holdToggle', function()
   end
   if myID ~= 0 then
     if not onhold then
-      exports['mythic_notify']:DoLongHudText('inform', 'Call on hold.')
+      PhoneNotify('inform', 'Call on hold.')
       onhold = true
       TriggerServerEvent("OnHold:Server",mySourceID,true)
     else
-      exports['mythic_notify']:DoLongHudText('inform', 'Call no longer on hold.')
+      PhoneNotify('inform', 'Call no longer on hold.')
       TriggerServerEvent("OnHold:Server",mySourceID,false)
       onhold = false
     end
@@ -2498,11 +2533,11 @@ AddEventHandler('phone:holdToggle', function()
 
     if mySourceID ~= 0 then
       if not onhold then
-        exports['mythic_notify']:DoLongHudText('inform', 'Call on hold.')
+        PhoneNotify('inform', 'Call on hold.')
         onhold = true
         TriggerServerEvent("OnHold:Server",mySourceID,true)
       else
-        exports['mythic_notify']:DoLongHudText('inform', 'Call no longer on hold.')
+        PhoneNotify('inform', 'Call no longer on hold.')
         TriggerServerEvent("OnHold:Server",mySourceID,false)
         onhold = false
       end
@@ -2516,13 +2551,13 @@ AddEventHandler('OnHold:Client', function(newHoldStatus,srcSent)
     if mySourceHoldStatus then
         local playerId = GetPlayerFromServerId(srcSent)
         
-        TriggerEvent("DoLongHudText","You just got put on hold.")
+        PhoneNotify('inform', 'You just got put on hold.')
     else
         if not onhold then
           local playerId = GetPlayerFromServerId(srcSent)
           
         end
-        TriggerEvent("DoLongHudText","Your caller is back on the line.")
+        PhoneNotify('inform', 'Your caller is back on the line.')
     end
 end)
 ----------
@@ -2544,7 +2579,7 @@ AddEventHandler('phone:addnotification', function(name,message)
     TriggerEvent('InteractSound_CL:PlayOnOne', 'email', 1.0)
   end
 
-  exports['mythic_notify']:DoLongHudText('inform', 'New Email!')
+  PhoneNotify('inform', 'New Email!')
   curNotifications[#curNotifications+1] = { ["name"] = name, ["message"] = message, ["time"] = GetGameTimer(), ["received"] = nil }
 end)
 
@@ -2595,7 +2630,7 @@ AddEventHandler('Client:UpdateTweet', function(data, handle2)
         if handle2 ~= handle then
             if phoneNotifications then
                 PlaySound(-1, "Event_Start_Text", "GTAO_FM_Events_Soundset", 0, 0, 1)
-                exports['mythic_notify']:DoLongHudText('inform', 'You were just mentioned in a tweet.')
+                PhoneNotify('inform', 'You were just mentioned in a tweet.')
             end
         end
     end
@@ -2750,7 +2785,7 @@ AddEventHandler('phone:newSMS', function(id, number, message, mypn, date, recip)
     })
       TriggerServerEvent('phone:getSMS') 
     if phoneNotifications then
-	  exports['mythic_notify']:DoLongHudText('inform', 'You just received a new SMS.')
+	  PhoneNotify('inform', 'You just received a new SMS.')
       PlaySound(-1, "Event_Start_Text", "GTAO_FM_Events_Soundset", 0, 0, 1)
     end
   end
@@ -2980,7 +3015,7 @@ end)
 RegisterNUICallback('btnBlackMarket', function(data, cb)
 
   if not vpnConnected then
-    exports['mythic_notify']:DoLongHudText('inform', 'You are not connected to VPN.')
+    PhoneNotify('inform', 'You are not connected to VPN.')
     return
   end
 
@@ -3029,16 +3064,16 @@ RegisterNUICallback('btnVPN', function(data, cb)
 
   if vpnConnected then
     vpnConnected = not vpnConnected
-    exports['mythic_notify']:DoLongHudText('inform', 'You have disconnected from VPN.')
+    PhoneNotify('inform', 'You have disconnected from VPN.')
     return
   end
 
-  local hasvpn = exports['pyrp_inventory']:hasEnoughOfItem('vpn_router', 1)
+  local hasvpn = HasItem('vpn_router')
 
   if hasvpn then
     TriggerEvent('phone:toggleVPN')
   else
-    exports['mythic_notify']:DoLongHudText('error', 'You do not have a VPN Router')
+    PhoneNotify('error', 'You do not have a VPN Router')
   end
 
   -- TriggerServerEvent('phone:toggleVPN')
@@ -3049,22 +3084,22 @@ RegisterNetEvent('phone:useVPN')
 AddEventHandler('phone:useVPN', function()
 
   if not hasPhone() then
-    exports['mythic_notify']:DoLongHudText('error', 'You do not have a phone.')
+    PhoneNotify('error', 'You do not have a phone.')
     return
   end
 
   if vpnConnected then
     vpnConnected = not vpnConnected
-    exports['mythic_notify']:DoLongHudText('inform', 'You have disconnected from VPN.')
+    PhoneNotify('inform', 'You have disconnected from VPN.')
     return
   end
 
-  local hasvpn = exports['pyrp_inventory']:hasEnoughOfItem('vpn_router', 1)
+  local hasvpn = HasItem('vpn_router')
 
   if hasvpn then
     TriggerEvent('phone:toggleVPN')
   else
-    exports['mythic_notify']:DoLongHudText('error', 'You do not have a VPN Router')
+    PhoneNotify('error', 'You do not have a VPN Router')
   end  
 end)
 
@@ -3077,13 +3112,13 @@ AddEventHandler('phone:toggleVPN', function()
 		disableCombat = true,
 	}, {}, {}, {}, function() -- Done
 		vpnConnected = not vpnConnected
-        exports['mythic_notify']:DoLongHudText('inform', 'You have successfully connected to VPN.')
+        PhoneNotify('inform', 'You have successfully connected to VPN.')
         while vpnConnected do
-          local hasvpn = exports['pyrp_inventory']:hasEnoughOfItem('vpn_router', 1)
+          local hasvpn = HasItem('vpn_router')
 
           if not hasvpn then
             vpnConnected = false
-            exports['mythic_notify']:DoLongHudText('inform', 'You have disconnected from VPN.')
+            PhoneNotify('inform', 'You have disconnected from VPN.')
             return
           end
           
@@ -3293,7 +3328,7 @@ RegisterNUICallback('PairDevice', function(data, cb)
   local ytlink = data.ytlink
 
   if not NetworkDoesNetworkIdExist(deviceid) then
-    exports['mythic_notify']:DoLongHudText('error', "Device couldn't be found.")
+    PhoneNotify('error', "Device couldn't be found.")
     return
   end
 
@@ -3303,7 +3338,7 @@ RegisterNUICallback('PairDevice', function(data, cb)
   local dist = GetDistanceBetweenCoords(pedCoords, objCoords, 1)
 
   if dist > 10.0 then
-    exports['mythic_notify']:DoLongHudText('error', "You are too far from the device.")
+    PhoneNotify('error', "You are too far from the device.")
     return
   end
 
@@ -3316,7 +3351,7 @@ function DropBoomBox()
   local object = GetClosestObjectOfType(pedCoords, 5.0, GetHashKey('prop_boombox_01'), false, false, false)
 
   if DoesEntityExist(object) then
-    exports['mythic_notify']:DoLongHudText('error', "You are too close from other boombox.")
+    PhoneNotify('error', "You are too close from other boombox.")
     return
   end
 
@@ -3433,7 +3468,7 @@ Citizen.CreateThread(function()
           print('Radio Station On')
           listeningRadio = true
 
-          exports['mythic_notify']:DoLongHudText('inform', "You are now listening to Weazel News 19.19 Radio Station!")
+          PhoneNotify('inform', "You are now listening to Weazel News 19.19 Radio Station!")
           TriggerEvent('pyrp_radio:ListenRadio')
           SendNUIMessage({
               boombox = 'StopBoombox'
@@ -3456,7 +3491,7 @@ Citizen.CreateThread(function()
       if playingBoombox ~= nil then
         if (boomboxList[playingBoombox] == nil) or (GetPlayerServerId(PlayerId()) == boomboxList[playingBoombox].connected and boomboxList[playingBoombox].ytlink ~= nil) then
             TriggerServerEvent('phone:UnpairDevice', playingBoombox)
-            exports['mythic_notify']:DoLongHudText('error', "You got disconnected from the boombox.")
+            PhoneNotify('error', "You got disconnected from the boombox.")
         end
       end
 	  
@@ -3496,11 +3531,11 @@ RegisterCommand('carradio', function(source)
       if tunedIn then
         listeningRadio = true
         TriggerEvent('pyrp_radio:ListenRadio')
-        exports['mythic_notify']:DoLongHudText('inform', "You are now listening to Weazel News 19.19 Radio Station!")
+        PhoneNotify('inform', "You are now listening to Weazel News 19.19 Radio Station!")
       else
         listeningRadio = false
         TriggerEvent('pyrp_radio:StopListeningRadio')
-        exports['mythic_notify']:DoLongHudText('inform', "You are no longer tuned in to Weazel News 19.19 Radio Station!")
+        PhoneNotify('inform', "You are no longer tuned in to Weazel News 19.19 Radio Station!")
       end
     end
 
@@ -3537,7 +3572,7 @@ AddEventHandler("phone:CarRadio", function()
         tunedIn = false
         listeningRadio = false
         TriggerEvent('pyrp_radio:StopListeningRadio')
-        exports['mythic_notify']:DoLongHudText('inform', "You are no longer tuned in to Weazel News 19.19 Radio Station!")        
+        PhoneNotify('inform', "You are no longer tuned in to Weazel News 19.19 Radio Station!")        
       end
 
       if not tunedIn then
