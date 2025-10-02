@@ -88,180 +88,111 @@
             <div class="camera"></div>
             <div class="phone-screen">
                 <div class="status-bar white-text">
-                    <div class="row no-padding">
-                        <div class="col s12" style="padding-top:2px">
-                            <div class="row no-padding">
-                                <div class="col s5 left-align">
-                                    <i id="status-bar-time" class="fas fa-battery-full"></i>
-                                    <span class="status-bar-time"></span> <span class="status-bar-weather"></span>
-                                </div>
-                                <div class="col s3 left-align">
-                                    <i class="fas fa-user green-text"></i>
-                                    <span class="status-bar-player-id"></span>
-                                </div>
-                                <div class="col s4 right-align">
-                                    <i class="fas fa-signal" style="font-size:14px"></i> PYRP
-                                </div>
-                            </div>
-                        </div>
+                    <div class="status-left">
+                        <span class="status-bar-time"></span>
+                    </div>
+                    <div class="status-center">
+                        <span class="status-bar-weather"></span>
+                    </div>
+                    <div class="status-right">
+                        <span class="status-player"><i class="fas fa-user"></i><span class="status-bar-player-id"></span></span>
+                        <span class="home-network"><i class="fas fa-signal"></i> PYRP</span>
+                        <i id="status-bar-time" class="fas fa-battery-full"></i>
                     </div>
                 </div>
                 <div id="phone-applications">
                     <div class="home-container phone-app">
-                        <div class="row app-row">
-                            <div class="col s3">
-                                <div class="rounded-square green phone-button" data-action="getCallHistory" aria-label="Calls" data-balloon-pos="right"><i class="fas fa-phone-alt"></i></div>
+                        <div class="home-content">
+                            <div class="home-header">
+                                <div>
+                                    <span class="home-title">Quick Access</span>
+                                    <span class="home-subtitle">Tap to open an app</span>
+                                </div>
+                                <div class="home-network"><i class="fas fa-wifi"></i> Connected</div>
                             </div>
-                            <div class="col s3">
-                                <div class="rounded-square green lighten-2 phone-button" data-action="messages" aria-label="Messages" data-balloon-pos="right"><i class="fas fa-comment icon"></i></div>
-                            </div>
-                            <div class="col s3">
-                                <div class="rounded-square amber lighten-2 phone-button" data-action="contacts" aria-label="Contacts" data-balloon-pos="left"><i class="fas fa-address-book"></i></div>
-                            </div>
-                            <div class="col s3">
-                                <div class="rounded-square blue lighten-1 phone-button" data-action="accountInformation" aria-label="Account Information" data-balloon-pos="left"><i class="fas fa-info-circle"></i></div>
-                            </div>
-
-                            <div class="col s3">
-                                <div class="rounded-square red accent-3 phone-button" data-action="btnGarage" aria-label="Your vehicles" data-balloon-pos="right"><i class="fas fa-car"></i></div>
-                            </div>
-							<!--
-                            <div class="col s3">
-                                <div class="rounded-square red lighten-2 phone-button" data-action="btnProperty2" aria-label="Coming Soon" data-balloon-pos="right">
-                                    
-                                    <i class="fas fa-key"></i></div>
-                            </div>
-							<div class="col s3">
-                                <div class="rounded-square blue darken-4 phone-button" data-action-button="browser" data-site="https://www.twitchparadise.com/forum/index.php" aria-label="Los Santos Web" data-balloon-pos="right"><i class="fas fa-globe"></i></div>
-                            </div>
-							<div class="col s3">
-                                <div class="rounded-square green darken-4 phone-button" data-action="btnStocks" aria-label="Stocks" data-balloon-pos="right"><i class="fas fa-chart-line"></i></div>
-                            </div>
-							<div class="col s3">
-                                <div class="rounded-square brown lighten-1 phone-button" data-action="loadGPS" aria-label="GPS" data-balloon-pos="left"><i class="fas fa-map-marked-alt"></i></div>
-                            </div>
-							-->
-                            <div class="col s3">
-                                <div class="rounded-square yellow phone-button" data-action="notificationsYP" aria-label="Yellow Pages" data-balloon-pos="left"><i class="fas fa-id-card icon"></i></div>
-                            </div>
-                            
-
-                            
-                            <div class="col s3">
-                                <div class="rounded-square blue lighten-1 phone-button" data-action="btnTwatter" aria-label="Twitter" data-balloon-pos="right"><i class="fab fa-twitter"></i></div>
-                            </div>
-
-                            <div class="col s3">
-                                <div class="rounded-square cyan lighten-2 phone-button" data-action="btnMute" aria-label="Toggle Calls" data-balloon-pos="left">
-                                    <i class="fas fa-phone-slash"></i></div>
-                            </div>
-
-                            
-                            <div class="col s3">
-                                <div class="rounded-square light-green lighten-2 phone-button" data-action="notifications" aria-label="Recent Email" data-balloon-pos="right"><i class="fas fa-envelope"></i></div>
-                            </div>
-							
-							<div class="col s3">
-                                <div class="rounded-square red darken-2 phone-button" data-action="btn911" aria-label="911" data-balloon-pos="left">
-                                    <i class="fa fa-ambulance"></i></div>
-                            </div> 
-							
-							<div class="col s3">
-                                <div class="rounded-square light-green darken-2 phone-button" data-action="btnBilling" aria-label="Invoices" data-balloon-pos="right">
-                                    <i class="fas fa-book"></i></div>
-                            </div> 
-							
-                            <div class="col s3">
-                                <div class="rounded-square amber darken-2 phone-button" data-action="btnTaskGroups" aria-label="Job Status" data-balloon-pos="left">
-                                    <i class="fas fa-briefcase"></i></div>
-                            </div>
-							
-                            <div class="col s3">
-                                <div class="rounded-square amber darken-2 phone-button" data-action="btnBusiness" aria-label="Assets" data-balloon-pos="up">
-                                    <i class="fas fa-landmark"></i></div>
-                            </div>
-							
-							
-                            <!--<div class="col s3">
-                                <div class="rounded-square blue phone-button btn-nopixel-radio" data-action="nopixel-radio" aria-label="Radio" data-balloon-pos="left"><i class="fas fa-broadcast-tower"></i>
+                            <div class="app-grid">
+                                <div class="app-tile phone-button" data-action="getCallHistory" aria-label="Calls" data-balloon-pos="right">
+                                    <div class="app-icon gradient-green"><i class="fas fa-phone-alt"></i></div>
+                                    <span class="app-label">Calls</span>
+                                </div>
+                                <div class="app-tile phone-button" data-action="messages" aria-label="Messages" data-balloon-pos="right">
+                                    <div class="app-icon gradient-light-green"><i class="fas fa-comment"></i></div>
+                                    <span class="app-label">Messages</span>
+                                </div>
+                                <div class="app-tile phone-button" data-action="contacts" aria-label="Contacts" data-balloon-pos="left">
+                                    <div class="app-icon gradient-amber"><i class="fas fa-address-book"></i></div>
+                                    <span class="app-label">Contacts</span>
+                                </div>
+                                <div class="app-tile phone-button" data-action="accountInformation" aria-label="Account Information" data-balloon-pos="left">
+                                    <div class="app-icon gradient-blue"><i class="fas fa-info-circle"></i></div>
+                                    <span class="app-label">Account</span>
+                                </div>
+                                <div class="app-tile phone-button" data-action="btnGarage" aria-label="Your vehicles" data-balloon-pos="right">
+                                    <div class="app-icon gradient-red"><i class="fas fa-car"></i></div>
+                                    <span class="app-label">Garage</span>
+                                </div>
+                                <div class="app-tile phone-button" data-action="notificationsYP" aria-label="Yellow Pages" data-balloon-pos="left">
+                                    <div class="app-icon gradient-yellow"><i class="fas fa-id-card"></i></div>
+                                    <span class="app-label">Yellow Pages</span>
+                                </div>
+                                <div class="app-tile phone-button" data-action="btnTwatter" aria-label="Twitter" data-balloon-pos="right">
+                                    <div class="app-icon gradient-cyan"><i class="fab fa-twitter"></i></div>
+                                    <span class="app-label">Twatter</span>
+                                </div>
+                                <div class="app-tile phone-button" data-action="btnMute" aria-label="Toggle Calls" data-balloon-pos="left">
+                                    <div class="app-icon gradient-olive"><i class="fas fa-phone-slash"></i></div>
+                                    <span class="app-label">Mute</span>
+                                </div>
+                                <div class="app-tile phone-button" data-action="notifications" aria-label="Recent Email" data-balloon-pos="right">
+                                    <div class="app-icon gradient-navy"><i class="fas fa-envelope"></i></div>
+                                    <span class="app-label">Mail</span>
+                                </div>
+                                <div class="app-tile phone-button" data-action="btn911" aria-label="911" data-balloon-pos="left">
+                                    <div class="app-icon gradient-amber-dark"><i class="fa fa-ambulance"></i></div>
+                                    <span class="app-label">911</span>
+                                </div>
+                                <div class="app-tile phone-button" data-action="btnBilling" aria-label="Invoices" data-balloon-pos="right">
+                                    <div class="app-icon gradient-sunrise"><i class="fas fa-book"></i></div>
+                                    <span class="app-label">Billing</span>
+                                </div>
+                                <div class="app-tile phone-button" data-action="btnTaskGroups" aria-label="Job Status" data-balloon-pos="left">
+                                    <div class="app-icon gradient-blue"><i class="fas fa-briefcase"></i></div>
+                                    <span class="app-label">Jobs</span>
+                                </div>
+                                <div class="app-tile phone-button" data-action="btnBusiness" aria-label="Assets" data-balloon-pos="up">
+                                    <div class="app-icon gradient-green"><i class="fas fa-landmark"></i></div>
+                                    <span class="app-label">Business</span>
+                                </div>
+                                <div class="app-tile phone-button" data-action="phone:selfie" aria-label="Selfie Camera" data-balloon-pos="up-left">
+                                    <div class="app-icon gradient-cyan"><i class="fa fa-camera"></i></div>
+                                    <span class="app-label">Selfie</span>
+                                </div>
+                                <div class="app-tile phone-button" data-action="myPings" aria-label="Pings" data-balloon-pos="left">
+                                    <div class="app-icon gradient-purple"><i class="fas fa-map-marked-alt"></i></div>
+                                    <span class="app-label">Pings</span>
+                                </div>
+                                <div class="app-tile phone-button" data-action="btnBluetooth" aria-label="Bluetooth" data-balloon-pos="up">
+                                    <div class="app-icon gradient-teal"><i class="fab fa-bluetooth"></i></div>
+                                    <span class="app-label">Bluetooth</span>
+                                </div>
+                                <div class="app-tile phone-button hidden-buttons btn-delivery-job" data-action="btnPackages" aria-label="Trucker Job" data-balloon-pos="up">
+                                    <div class="app-icon gradient-blue"><i class="fas fa-truck"></i></div>
+                                    <span class="app-label">Deliveries</span>
+                                </div>
+                                <div class="app-tile phone-button hidden-buttons btn-black-market" data-action="btnBlackMarket" aria-label="Blackmarket" data-balloon-pos="up">
+                                    <div class="app-icon gradient-purple"><i class="fas fa-user-secret"></i></div>
+                                    <span class="app-label">Blackmarket</span>
                                 </div>
                             </div>
-
-                             <div class="col s3">
-                                <div class="rounded-square red darken-4 phone-button" data-action="dabcoin" aria-label="DabCoin" data-balloon-pos="up-left">
-                                    <i class="fab fa-dyalog"></i></div>
-                            </div>
-							
-							<div class="col s3">
-                                <div class="rounded-square green darken-4 phone-button" data-action="settings" aria-label="Settings" data-balloon-pos="up-left"><i class="fas fa-sliders-h"></i>
-                                </div>
-                            </div>
-							-->
-							
-							
-                            <div class="col s3">
-                                <div class="rounded-square teal phone-button" data-action="phone:selfie" aria-label="Selfie Camera" data-balloon-pos="up-left">
-                                    <i class="fa fa-camera"></i></div>
-                            </div>
-
-                            <div class="col s3">
-                                <div class="rounded-square brown lighten-1 phone-button" data-action="myPings" aria-label="Pings" data-balloon-pos="left"><i class="fas fa-map-marked-alt"></i></div>
-                            </div>
-							
-							<div class="col s3">
-                                <div class="rounded-square blue lighten-2 phone-button" aria-label="Bluetooth" data-action="btnBluetooth" data-balloon-pos="up">
-                                    <i class="fab fa-bluetooth"></i></div>
-                            </div>  
-							
-							<div class="col s3 hidden-buttons btn-delivery-job">
-                                <div class="rounded-square blue lighten-2 phone-button" aria-label="Trucker Job" data-action="btnPackages" data-balloon-pos="up">
-                                    <i class="fas fa-truck"></i></div>
-                            </div>  
-							
-							<div class="col s3 hidden-buttons btn-black-market">
-                                <div class="rounded-square blue lighten-2 phone-button" aria-label="Blackmarket" data-action="btnBlackMarket" data-balloon-pos="up">
-                                    <i class="fas fa-user-secret"></i></div>
-                            </div>  
-							
-                            <!--<div class="col s3 hidden-buttons btn-real-estate">
-                                <div class="rounded-square indigo lighten-2 phone-button " data-action="btnProperty" aria-label="Real Estate" data-balloon-pos="up-left"><i class="fas fa-home"></i>
-                                </div>
-                            </div>
-                            <div class="col s3 hidden-buttons btn-delivery-job">
-                                <div class="rounded-square brown darken-1 phone-button" data-action="btnTrucker" aria-label="Delivery Job" data-balloon-pos="up-left">
-                                    <i class="fas fa-truck-loading"></i></div>
-                            </div>
-
-                            <div class="col s3 hidden-buttons btn-decrypt">
-                                <div class="rounded-square blue darken-4 phone-button" data-action="btnDecrypt" aria-label="Decryption" data-balloon-pos="up-left">
-                                    <i class="fas fa-unlock-alt"></i></div>
-                            </div>
-                            <div class="col s3 hidden-buttons btn-vpn">
-                                <div class="rounded-square teal darken-2 phone-button" aria-label="Unknown App" data-action-button="browser" data-site="http://www.nopixel.online/slothroad" data-balloon-pos="up-left">
-                                    <i class="fas fa-shield-alt"></i></div>
-                            </div>
-							<div class="col s3">
-                                <div class="rounded-square green darken-4 phone-button" data-action="racing:events:list" aria-label="Racing" data-balloon-pos="up-left"><i class="fas fa-flag-checkered"></i>
-                                </div>
-                            </div> -->
                         </div>
-                        <div class="row app-row">
-
+                        <div class="home-dock">
+                            <div class="phone-button" data-action="getCallHistory" aria-label="Calls" data-balloon-pos="up"><i class="fas fa-phone"></i></div>
+                            <div class="phone-button" data-action="messages" aria-label="Messages" data-balloon-pos="up"><i class="fas fa-comment-dots"></i></div>
+                            <div class="phone-button" data-action="contacts" aria-label="Contacts" data-balloon-pos="up"><i class="fas fa-users"></i></div>
+                            <div class="phone-button" data-action="notifications" aria-label="Notifications" data-balloon-pos="up"><i class="fas fa-bell"></i></div>
                         </div>
-                        <div class="row app-row">
-
-                        </div>
-                        <div class="row app-row">
-
-                        </div>
-                        <div class="row app-row">
-
-                        </div>
-                        <div class="row app-row">
-
-                        </div>
-
                     </div>
+                </div>
                     <div class="incoming-call-container phone-app">
                         <div class="row incoming-call-header center-align no-padding white-text">
                             <h5 style="margin:0px;padding-top:15px" class="incoming-call-header-caller">Incoming call</h5>

@@ -3051,7 +3051,7 @@ function openContainer(containerName, fadeInTime = 500, ...args) {
     closeContainer(currentContainer, (currentContainer !== containerName ? 300 : 0));
     $("." + containerName + "-container").hide().fadeIn((currentContainer !== containerName ? fadeInTime : 0));
     if (containerName === "home") {
-        $(".phone-screen .rounded-square:not('.hidden-buttons')").each(function () {
+        $(".phone-screen .app-tile:not('.hidden-buttons')").each(function () {
             $(this).fadeIn(1000);
         });
         $(".navigation-menu").fadeTo("slow", 0.5, null);
@@ -3076,7 +3076,7 @@ function openContainer(containerName, fadeInTime = 500, ...args) {
 function closeContainer(containerName, fadeOutTime = 500) {
     $.when($("." + containerName + "-container").fadeOut(fadeOutTime).hide()).then(function () {
         if (containerName === "home")
-            $(".phone-screen .rounded-square").each(function () {
+            $(".phone-screen .app-tile").each(function () {
                 $(this).fadeIn(300);
             });
     });
