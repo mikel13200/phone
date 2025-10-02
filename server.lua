@@ -1,4 +1,34 @@
+local function ensurePhoneSchema()
+    local ok, columns = pcall(function()
+        return MySQL.Sync.fetchAll('SHOW COLUMNS FROM phone_messages', {})
+    end)
+
+    if not ok or type(columns) ~= 'table' then
+        return
+    end
+
+    local hasReceiver = false
+
+    for _, column in ipairs(columns) do
+        if column.Field == 'receiver' then
+            hasReceiver = true
+            break
+        end
+    end
+
+    if not hasReceiver then
+        local success, err = pcall(function()
+            MySQL.query.await('ALTER TABLE phone_messages ADD COLUMN `receiver` varchar(10) NOT NULL DEFAULT "" AFTER `sender`')
+        end)
+
+        if not success then
+            print(('[phone] Failed to add receiver column to phone_messages: %s'):format(err))
+        end
+    end
+end
+
 MySQL.ready(function ()
+    ensurePhoneSchema()
     TriggerEvent('deleteAllYP')
 end)
 
@@ -8,6 +38,10 @@ local callID = nil
 local fallbackHandle = '@Unknown_Citizen'
 local fallbackName = 'Unknown Citizen'
 local fal = fallbackHandle
+
+ESX.RegisterServerCallback('pyrp_company:getBusinesses', function(source, cb)
+    cb({})
+end)
 
 local function sendServerNotification(target, notifType, description)
     if not target then return end
@@ -58,27 +92,6 @@ local function getIdentity(sourceId)
         firstname = identity.firstname or '',
         lastname = identity.lastname or ''
     }
-end
-
-local function sendServerNotification(target, notifType, description)
-    if not target then return end
-
-    local notifDescription = description
-    local notifTypeValue = notifType
-
-    if type(notifType) == 'table' then
-        notifDescription = notifType.text or notifType.description or notifDescription
-        notifTypeValue = notifType.type or notifTypeValue
-        if notifType.title and not description then
-            notifDescription = notifType.title
-        end
-    end
-
-    TriggerClientEvent('ox_lib:notify', target, {
-        title = 'Phone',
-        type = notifTypeValue or 'inform',
-        description = notifDescription
-    })
 end
 
 --[[ Twitter Stuff ]]
@@ -521,8 +534,17 @@ AddEventHandler('getAccountInfo', function()
     local src = source
     local player = ESX.GetPlayerFromId(source)
 
-    local money = player.getMoney()
-    local inbank = player.getBank()
+    local money = player.getMoney and player.getMoney() or 0
+    local inbank = 0
+
+    if player.getAccount then
+        local account = player.getAccount(player, 'bank')
+        if account and account.money then
+            inbank = account.money
+        end
+    elseif player.getBank then
+        inbank = player.getBank()
+    end
     local licenceTable = {}
 
     TriggerEvent('esx_license:getLicenses', source, function(licenses)
@@ -556,6 +578,19 @@ AddEventHandler('phone:updatePhoneJob', function(advert)
     local mynumber = getNumberPhone(xPlayer.identifier)
     local identity = getIdentity(src)
     local displayName = fallbackName
+
+    if identity then
+        local first = identity.firstname ~= '' and identity.firstname or 'Unknown'
+        local last = identity.lastname ~= '' and identity.lastname or 'Citizen'
+        displayName = first .. ' ' .. last
+    else
+        local playerName = xPlayer and xPlayer.getName and xPlayer.getName()
+
+        if type(playerName) == 'string' and playerName ~= '' then
+            displayName = playerName
+        end
+    end
+
 
     if identity then
         local first = identity.firstname ~= '' and identity.firstname or 'Unknown'
