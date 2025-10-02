@@ -5,6 +5,60 @@ end)
 local ESX = exports['es_extended']:getSharedObject()
 
 local callID = nil
+local fallbackHandle = '@Unknown_Citizen'
+local fallbackName = 'Unknown Citizen'
+local fal = fallbackHandle
+
+local function sendServerNotification(target, notifType, description)
+    if not target then return end
+
+    local notifDescription = description
+    local notifTypeValue = notifType
+
+    if type(notifType) == 'table' then
+        notifDescription = notifType.text or notifType.description or notifDescription
+        notifTypeValue = notifType.type or notifTypeValue
+        if notifType.title and not description then
+            notifDescription = notifType.title
+        end
+    end
+
+    TriggerClientEvent('ox_lib:notify', target, {
+        title = 'Phone',
+        type = notifTypeValue or 'inform',
+        description = notifDescription
+    })
+end
+
+local function getIdentity(sourceId)
+    local xPlayer = ESX.GetPlayerFromId(sourceId)
+
+    if not xPlayer then
+        return nil
+    end
+
+    local identifier = xPlayer.getIdentifier and xPlayer.getIdentifier() or xPlayer.identifier
+
+    if not identifier then
+        return nil
+    end
+
+    local result = MySQL.Sync.fetchAll(
+        'SELECT firstname, lastname FROM users WHERE identifier = @identifier LIMIT 1',
+        { ['@identifier'] = identifier }
+    )
+
+    local identity = result and result[1]
+
+    if not identity then
+        return nil
+    end
+
+    return {
+        firstname = identity.firstname or '',
+        lastname = identity.lastname or ''
+    }
+end
 
 local function sendServerNotification(target, notifType, description)
     if not target then return end
@@ -60,27 +114,29 @@ RegisterNetEvent('Server:GetHandle')
 AddEventHandler('Server:GetHandle', function()
     local src = source
     local xPlayer = ESX.GetPlayerFromId(src)
-    local identifier = xPlayer.identifier
-    local name = getIdentity(src)	
-    fal = "@" .. name.firstname .. "_" .. name.lastname
+    if not xPlayer then
+        TriggerClientEvent('givemethehandle', src, fal)
+        return
+    end
+
+    local identity = getIdentity(src)
     local handle = fal
+
+    if identity then
+        local first = identity.firstname ~= '' and identity.firstname or 'Unknown'
+        local last = identity.lastname ~= '' and identity.lastname or 'Citizen'
+        handle = '@' .. first:gsub('%s+', '') .. '_' .. last:gsub('%s+', '')
+    else
+        local playerName = xPlayer.getName and xPlayer.getName()
+
+        if type(playerName) == 'string' and playerName ~= '' then
+            handle = '@' .. playerName:gsub('%s+', '_')
+        end
+    end
+
+    fal = handle
     TriggerClientEvent('givemethehandle', src, handle)
 end)
-
-function getIdentity(target)
-	local identifier = GetPlayerIdentifiers(target)[1]
-	local result = MySQL.Sync.fetchAll("SELECT * FROM users WHERE identifier = @identifier", {['@identifier'] = identifier})
-	if result[1] ~= nil then
-		local identity = result[1]
-
-		return {
-			firstname = identity['firstname'],
-			lastname = identity['lastname'],
-		}
-	else
-		return nil
-	end
-end
 
 --[[ Contacts stuff ]]
 
@@ -458,21 +514,6 @@ AddEventHandler('phone:getServerTime', function()
     TriggerClientEvent('timeheader', -1, hours, minutes)
 end)
 
-function getIdentity(target)
-	local identifier = GetPlayerIdentifiers(target)[1]
-	local result = MySQL.Sync.fetchAll("SELECT * FROM users WHERE identifier = @identifier", {['@identifier'] = identifier})
-	if result[1] ~= nil then
-		local identity = result[1]
-
-		return {
-			firstname = identity['firstname'],
-			lastname = identity['lastname'],
-		}
-	else
-		return nil
-	end
-end
-
 --[[ Others ]]
 
 RegisterNetEvent('getAccountInfo')
@@ -513,12 +554,25 @@ AddEventHandler('phone:updatePhoneJob', function(advert)
     local src = source
     local xPlayer = ESX.GetPlayerFromId(src)
     local mynumber = getNumberPhone(xPlayer.identifier)
-    local name = getIdentity(src)
+    local identity = getIdentity(src)
+    local displayName = fallbackName
 
-    fal = name.firstname .. " " .. name.lastname
+    if identity then
+        local first = identity.firstname ~= '' and identity.firstname or 'Unknown'
+        local last = identity.lastname ~= '' and identity.lastname or 'Citizen'
+        displayName = first .. ' ' .. last
+    else
+        local playerName = xPlayer and xPlayer.getName and xPlayer.getName()
+
+        if type(playerName) == 'string' and playerName ~= '' then
+            displayName = playerName
+        end
+    end
+
+    fal = displayName
 
     MySQL.Async.execute('INSERT INTO phone_yp (name, advert, phoneNumber) VALUES (@name, @advert, @phoneNumber)', {
-        ['@name'] = fal,
+        ['@name'] = displayName,
         ['@advert'] = advert,
         ['@phoneNumber'] = mynumber
     }, function(result)
