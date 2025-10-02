@@ -141,6 +141,11 @@ AddEventHandler('Server:GetHandle', function()
         handle = '@' .. first:gsub('%s+', '') .. '_' .. last:gsub('%s+', '')
     else
         local playerName = xPlayer.getName and xPlayer.getName()
+        if type(playerName) == 'string' and playerName ~= '' then
+            handle = '@' .. playerName:gsub('%s+', '_')
+        end
+    end
+
 
         if type(playerName) == 'string' and playerName ~= '' then
             handle = '@' .. playerName:gsub('%s+', '_')
@@ -578,6 +583,18 @@ AddEventHandler('phone:updatePhoneJob', function(advert)
     local mynumber = getNumberPhone(xPlayer.identifier)
     local identity = getIdentity(src)
     local displayName = fallbackName
+
+    if identity then
+        local first = identity.firstname ~= '' and identity.firstname or 'Unknown'
+        local last = identity.lastname ~= '' and identity.lastname or 'Citizen'
+        displayName = first .. ' ' .. last
+    else
+        local playerName = xPlayer and xPlayer.getName and xPlayer.getName()
+
+        if type(playerName) == 'string' and playerName ~= '' then
+            displayName = playerName
+        end
+    end
 
     if identity then
         local first = identity.firstname ~= '' and identity.firstname or 'Unknown'
