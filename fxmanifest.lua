@@ -1,7 +1,7 @@
-fx_version 'adamant'
+fx_version 'cerulean'
 game 'gta5'
-description 'NoPixel Phone - DO NOT REDISTRIBUTE'
-version '1.0.2'
+description 'ESX Legacy compatible phone'
+version '2.0.0'
 
 ui_page 'html/ui.html'
 
@@ -38,15 +38,24 @@ files {
 	'html/webfonts/fa-solid-900.woff2',
 }
 
+shared_script '@ox_lib/init.lua'
+
 client_scripts {
-	'client/assistance.lua',
-	'client/stocks.lua',
-	'client/main.lua',
-	'client/twitter.lua',
+        'client/main.lua'
 }
 
-server_script '@mysql-async/lib/MySQL.lua'
-server_script "server.lua"
+server_scripts {
+        '@oxmysql/lib/MySQL.lua',
+        'server.lua'
+}
+
+lua54 'yes'
+
+dependencies {
+        'es_extended',
+        'ox_lib',
+        'ox_inventory'
+}
 
 
 -- DO THIS FOR RECENT EMAILS!
